@@ -1,0 +1,1 @@
+Main-Class: org.markup.leglib.ocrProc
