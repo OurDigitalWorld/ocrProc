@@ -240,9 +240,17 @@ public class ocrProc {
     /*
        textFromPdfInput() - loop through PDF pages and OCR any without text
     */
-    public static void textFromPdfInput(String sourceFile, String outFile, String ext) {
+    public static boolean textFromPdfInput(String sourceFile, String outFile, String ext) {
         File pdfFile = new File(sourceFile);
-        int pgno = pdfU.getPdfPageCount(pdfFile);
+        int pgno = 0;
+        try {
+            pgno = pdfU.getPdfPageCount(pdfFile);
+        } catch (Exception ex) {
+            logger.info("pdf problem: " + ex.toString());
+            pgno = 0;
+        }//try
+        if (pgno <= 0)
+            return false;
         File[] fileList = new File[pgno];
         String txtFile = changeExt(outFile, ext, TEXT_EXT,".");
         String pdfText;
@@ -275,20 +283,29 @@ public class ocrProc {
                 }//if
             } catch (IOException ioe) {
                 logger.info("file problem for pg: " + pg + " of " + pdfFile);
+                return false;
             }//try
         }//for
-        if (pdfFlag && fileList.length > 0) pdfU.mergePdf(fileList, 
-            new File(outFile));
+        if (pdfFlag && fileList.length > 0) { 
+            try {
+                pdfU.mergePdf(fileList, 
+                    new File(outFile));
+            } catch (Exception ex) {
+                logger.info("pdf problem: " + ex.toString());
+                return false;
+            }//try
+        }//if
+        return true;
     }//textFromPdfInput
 
     /*
        createOcrOutput() - attempt to produce OCR for supplied files
     */
-    public static void createOcrOutput(String sourceFile, String outFile, String ext) {
+    public static boolean createOcrOutput(String sourceFile, String outFile, String ext) {
         logger.info("create ocr from sourceFile: " + sourceFile);
         logger.info("target file: " + outFile);
         if (ext.contains(PDF_EXT)) 
-            textFromPdfInput(sourceFile, outFile, ext);
+            return textFromPdfInput(sourceFile, outFile, ext);
         else {
             if (pdfFlag) {
                 //remove extension for Tesseract pdf output
@@ -296,6 +313,9 @@ public class ocrProc {
                 if (pdfOutFromOcr(new File(sourceFile), pdfFile)) 
                 {
                     logger.info("pdf created for: " + sourceFile);
+                } else {
+                    logger.info("unable to create pdf for: " + sourceFile);
+                    return false;
                 }//if
             }//if
             if (textFlag) {   
@@ -307,11 +327,14 @@ public class ocrProc {
                             new File(txtFile), imgText, TEXT_ENC, true);
                     } catch (IOException ioe) {
                         logger.info("unable to create: " + txtFile);
+                        return false;
                     }//try
                 }//if
             }//if
         }//if
-    }//sortOutPdf
+        return true;
+
+    }//createOcrOutput
 
     /*
        countFiles() - check file extensions for OCR candidates
@@ -342,12 +365,13 @@ public class ocrProc {
        dealWithFiles() - figure out whether files need to be OCRed or moved
     */
     public static void dealWithFiles(String wDir, File file,String fullPath, 
-        String outPath, String fileName, String ext) 
+        String outPath, String rejectsPath, String fileName, String ext) 
     {
         File curDir = new File(file.getParent());   
 
         File procFile = new File(fullPath + fileName);
         File ocrFile = new File(outPath + fileName);
+        File rejectsFile = new File(rejectsPath + fileName);
         File dirFile = new File(procFile.getParent());
         File outFile = new File(ocrFile.getParent());
 
@@ -367,34 +391,50 @@ public class ocrProc {
              }//if
              logger.info("moved: " + file.toString() +
                  " to: " + procFile.toString());
-             createOcrOutput(procFile.toString(),
-                 ocrFile.toString(), ext);
+             if (!createOcrOutput(procFile.toString(),
+                 ocrFile.toString(), ext)) 
+             {
+                 logger.info("ocr failed for: " + 
+                     procFile.toString());
+                 File rejDir = new File(rejectsFile.getParent());
+                 if (!rejDir.exists()) {
+                     rejDir.mkdirs();
+                     logger.info(rejDir.toString() + ": created");
+                 }//if
+                 procFile.renameTo(rejectsFile);
+                 logger.info("moved: " + procFile.toString() +
+                     " to: " + rejectsFile.toString());
+             }//if
         }//if
     }//dealWithFiles
 
     /*
        procFiles() - loop through directories looking for candidate files
     */
-    public static int procFiles(String wDir, File[] files,String base,String out, int fileCnt) {
+    public static int procFiles(String wDir, File[] files,String base,String out, 
+        String rejects, int fileCnt) 
+    {
         int curCnt = fileCnt;
         String fullPath = "";
         String outPath = "";
+        String rejectsPath = "";
         String iformats = listImgFormats();
 
         if (base.length() > 0) fullPath = base + File.separator;
         if (out.length() > 0) outPath = out + File.separator;
+        if (rejects.length() > 0) rejectsPath = rejects + File.separator;
 
         for (File file : files) {
             if (file.isDirectory()) {
                curCnt = procFiles(wDir,file.listFiles(),fullPath + file.getName(), 
-                   outPath + file.getName(), curCnt);
+                   outPath + file.getName(), rejectsPath + file.getName(), curCnt);
                file.delete();
             } else {
                curCnt++;
                String fileName = file.getName();
                String ext = FilenameUtils.getExtension(fileName).toLowerCase();
                if (iformats.contains(ext) || ext.contains(PDF_EXT))
-                   dealWithFiles(wDir,file,fullPath,outPath,fileName, ext);
+                   dealWithFiles(wDir,file,fullPath,outPath,rejectsPath,fileName, ext);
             }//if
         }//for
         return curCnt;
@@ -403,12 +443,14 @@ public class ocrProc {
     /*
        ocrProcess() - set flags for OCR output formats
     */
-    public static int ocrProcess(File fWatchDir,File fProcDir,File fDestDir) {
+    public static int ocrProcess(File fWatchDir,File fProcDir,File 
+        fDestDir, File fRejectDir) 
+    {
         File[] files = fWatchDir.listFiles();
         if (formats.contains(PDF_EXT)) pdfFlag = true;
         if (formats.contains("text")) textFlag = true;
         return procFiles(fWatchDir.toString(),files,fProcDir.toString(),
-            fDestDir.toString(), 0);
+            fDestDir.toString(), fRejectDir.toString(), 0);
     }//procFiles
 
     /*
@@ -468,6 +510,7 @@ public class ocrProc {
         String imgFormats = listImgFormats();
         String sProcDir = prop.getProperty("procDir");
         String sDestDir = prop.getProperty("destDir");
+        String sRejectDir = prop.getProperty("rejectDir");
 
         if (cl.hasOption("w"))
             sWatchDir = checkOption("w",sWatchDir);
@@ -480,6 +523,10 @@ public class ocrProc {
         if (cl.hasOption("d"))
            sDestDir = checkOption("d",sDestDir);
         logger.info("destination directory set to " + sDestDir);
+
+        if (cl.hasOption("r"))
+           sRejectDir = checkOption("r",sRejectDir);
+        logger.info("rejection directory set to " + sRejectDir);
 
         formats = prop.getProperty("formats");
         if (cl.hasOption("f"))
@@ -504,6 +551,7 @@ public class ocrProc {
         File fWatchDir = new File(sWatchDir);
         File fProcDir = new File(sProcDir);
         File fDestDir = new File(sDestDir);
+        File fRejectDir = new File(sRejectDir);
 
         //see if there is anything to process
         int fileNo = countFiles(sWatchDir,0);
@@ -511,6 +559,7 @@ public class ocrProc {
         if ((fWatchDir.exists() && fWatchDir.isDirectory()) &&
             (fProcDir.exists() && fProcDir.isDirectory()) &&
             (fDestDir.exists() && fDestDir.isDirectory()) &&
+            (fRejectDir.exists() && fRejectDir.isDirectory()) &&
             fileNo > 0)
         {
             tesseract = new Tesseract();
@@ -519,7 +568,7 @@ public class ocrProc {
             pdfU = new PdfBoxUtilities();
             logger.info(fileNo + " file(s) identified for processing");
             logger.info("supported image formats: " + listImgFormats());
-            logger.info(ocrProcess(fWatchDir,fProcDir,fDestDir) +
+            logger.info(ocrProcess(fWatchDir,fProcDir,fDestDir,fRejectDir) +
                 " processed");
         }//if
 
