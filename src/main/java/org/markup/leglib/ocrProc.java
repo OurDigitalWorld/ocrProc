@@ -258,6 +258,7 @@ public class ocrProc {
         for(int pg=0; pg<pgno; pg++){
             try {
                 File pdfPage = File.createTempFile("tempfile", "." + PDF_EXT);
+                pdfPage.deleteOnExit();
                 pdfU.splitPdf(pdfFile,pdfPage,pg+1,pg+1);
                 pdfText = getPdfTextIfAny(pdfPage.toString());
                 if (pdfFlag) fileList[pg] = pdfPage;
@@ -271,6 +272,7 @@ public class ocrProc {
                      if (pdfFlag) {
                          File pdfPageOcr = File.
                              createTempFile("tempfile", "." + PDF_EXT);
+                         pdfPageOcr.deleteOnExit();
                          //swap pdf page if OCR is possible
                          if (pdfOutFromOcr(tiffFile,changeExt(pdfPageOcr.toString(),PDF_EXT,"","")))
                              fileList[pg] = pdfPageOcr;  
@@ -578,3 +580,4 @@ public class ocrProc {
 
     }//main
 }//ocrProc
+
