@@ -19,8 +19,9 @@ The command line options are:
      -h,--help                show help
      -l,--languages <arg>     languages, e.g eng, eng+fra
      -p,--process <arg>       process directory
+     -r,--reject <arg>        rejects directory
      -t,--tessdata <arg>      tesseract data location
-     -w,--watch <arg>         watch directory
+     -w,--watch <arg>         watch directory     
 
 For example:
 
