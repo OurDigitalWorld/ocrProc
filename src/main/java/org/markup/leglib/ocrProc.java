@@ -475,13 +475,14 @@ public class ocrProc {
         ParseException, TesseractException
     {
         options = new Options();
-        options.addOption("h", "help", false, "show help");
-        options.addOption("w", "watch", true, "watch directory");
-        options.addOption("p", "process", true, "process directory");
         options.addOption("d", "destination", true, "destination directory");
         options.addOption("f", "formats", true, "formats - text, pdf");
+        options.addOption("h", "help", false, "show help");
         options.addOption("l", "languages", true, "languages, e.g eng, eng+fra");  
-        options.addOption("t", "tessdata", true, "tesseract data location");      
+        options.addOption("p", "process", true, "process directory");
+        options.addOption("r", "reject", true, "rejects directory");
+        options.addOption("t", "tessdata", true, "tesseract data location"); 
+        options.addOption("w", "watch", true, "watch directory");
 
         BasicParser parser = new BasicParser();
         cl = parser.parse(options, args);
@@ -580,4 +581,3 @@ public class ocrProc {
 
     }//main
 }//ocrProc
-
