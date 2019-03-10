@@ -59,15 +59,15 @@ The other options are as follows:
 *   **formats** - this can be set to a value of _text_ or _pdf_, as well as both, i.e., _text,pdf_. This refers to the **output** format. For example, the file _sample.pdf_ can be OCRed with the _text_ option to produce a _sample.txt_ in the destination directory. Similarly, the _pdf_ option will result in a _sample.pdf_ to be created in the destination directory, and the OCR in this case will be _embedded_ into each page of the _pdf_ file. Note that _ocrProc_ will not perform OCR on a PDF page if it already has embedded text. This could mean, for example, that one page in a 20 page PDF document has no text in the input file, but the output file has text on this page as a result of OCR processing.
 *   **langs** - this is used to specify one or more codes as used by [Tesseract](https://github.com/tesseract-ocr/). The full list of
 languages can be found in the [Tesseract wiki](https://github.com/tesseract-ocr/tesseract/wiki/Data-Files).
-*   **tessdata** - the location of the Tesseract data directory. ocrProc uses [Tess4J] for access to the Tesseract libraries, and this
-allows the appropriate directory to be explictedly set.
+*   **tessdata** - the location of the _Tesseract_ data directory. _ocrProc_ uses [Tess4J](http://tess4j.sourceforge.net/) to provide
+access to the Tesseract libraries, and this allows the appropriate directory to be explictedly set.
 
 To install _Tesseract_, follow the 
 [instructions for the desired platform](https://github.com/tesseract-ocr/tesseract#installing-tesseract). Note for _windows_ 
 that the Universitätsbibliothek Mannheim maintains Tesseract installers for 32 and 64 bit _windows_ platforms on github at 
 the [Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki) page.
 
-A _lock_ file when _ocrProc_ is invoked. This is useful for running OCR on a recurring schedule and avoiding more than one
+A _lock_ file is created when _ocrProc_ is invoked. This is useful for running OCR on a recurring schedule and avoiding more than one
 instance running at a time. In unix-like environments, the assumption is that a cron job would be used. For example, an _ocrProc.sh_
 script could be added to crontab with the following syntax:
 
@@ -87,9 +87,9 @@ every 15 minutes:
 */15 * * * * /leglib/ocrProc.sh
 ```
 
-ocrProc uses _log4j_ logging properties, set in the [resources directory](/OurDigitalWorld/ocrProc/tree/master/src/main/resources).
-In this case, an _ocrProc.log_ file will be created in the _leglib_ directory, and give information about each invocation, for
-example:
+ocrProc uses _log4j_ logging properties, set in the 
+[resources directory](https://github.com/OurDigitalWorld/ocrProc/tree/master/src/main/resources). In this case, an _ocrProc.log_ 
+file will be created in the _leglib_ directory, and give information about each invocation, for example:
 
 ```
 03-10@22:45:02 INFO      -----------------------------------------
