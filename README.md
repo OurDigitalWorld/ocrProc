@@ -51,7 +51,7 @@ host operating system's [JAI support](https://www.oracle.com/technetwork/java/ii
 *   **procDir** - candidatefiles are copied to this directory before OCR/text extraction is performed;
 *   **destDir** - this is the directory that receives the result of the processing. Both _procDir_ and _destDir_ retrain the 
 directory structure used in the _watch_ directory, allowing nesting of sundirectories.
-*   **ejectDir** - files that cannot be processed are placed here. For example, a PDF file with password access will not be
+*   **rejectDir** - files that cannot be processed are placed here. For example, a PDF file with password access will not be
 able to be processed automatically and will be placed here. This is the directory to use for tracking problematic files.
 
 The other options are as follows:
@@ -60,7 +60,7 @@ The other options are as follows:
 *   **langs** - this is used to specify one or more codes as used by [Tesseract](https://github.com/tesseract-ocr/). The full list of
 languages can be found in the [Tesseract wiki](https://github.com/tesseract-ocr/tesseract/wiki/Data-Files).
 *   **tessdata** - the location of the _Tesseract_ data directory. _ocrProc_ uses [Tess4J](http://tess4j.sourceforge.net/) to provide
-access to the Tesseract libraries, and this allows the appropriate directory to be explictedly set.
+access to the _Tesseract_ libraries, and this allows the appropriate directory to be explictedly set.
 
 To install _Tesseract_, follow the 
 [instructions for the desired platform](https://github.com/tesseract-ocr/tesseract#installing-tesseract). Note for _windows_ 
