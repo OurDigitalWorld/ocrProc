@@ -49,7 +49,7 @@ A directory structure for identifying and managing OCR tasks. The directories th
 *   **watchDir** - used for identfying files that be processed. ocrProc will flag anything with an image extension recognized by the 
 host operating system's [JAI support](https://www.oracle.com/technetwork/java/iio-141084.html) as well as any PDF file.
 *   **procDir** - candidatefiles are copied to this directory before OCR/text extraction is performed;
-*   **destDir** - this is the directory that receives the result of the processing. Both _procDir_ and _destDir_ retrain the 
+*   **destDir** - this is the directory that receives the result of the processing. Both _procDir_ and _destDir_ retain the 
 directory structure used in the _watch_ directory, allowing nesting of sundirectories.
 *   **rejectDir** - files that cannot be processed are placed here. For example, a PDF file with password access will not be
 able to be processed automatically and will be placed here. This is the directory to use for tracking problematic files.
