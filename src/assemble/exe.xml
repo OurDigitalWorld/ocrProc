@@ -10,6 +10,7 @@
       <scope>runtime</scope>
       <includes>
         <include>com.github.jai-imageio:jai-imageio-core</include>
+        <include>com.github.jai-imageio:jai-imageio-jpeg2000</include>
         <include>net.sourceforge.tess4j:tess4j</include>
         <include>net.sourceforge.lept4j:lept4j</include>
         <include>org.apache.pdfbox:pdfbox</include>

@@ -61,6 +61,12 @@
       <artifactId>jai-imageio-core</artifactId>
       <version>1.3.0</version>
     </dependency>
+   <!-- JAI Image I/O tools -->
+    <dependency>
+      <groupId>com.github.jai-imageio</groupId>
+      <artifactId>jai-imageio-jpeg2000</artifactId>
+      <version>1.3.0</version>
+    </dependency>
    <!-- slf4j libs for Tess4J -->
    <dependency>
       <groupId>org.slf4j</groupId>
