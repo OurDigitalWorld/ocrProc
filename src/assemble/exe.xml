@@ -16,6 +16,7 @@
         <include>org.apache.pdfbox:pdfbox</include>
         <include>org.apache.pdfbox:fontbox</include>
         <include>org.apache.pdfbox:pdfbox-tools</include>
+        <include>org.apache.pdfbox:jbig2-imageio</include>
         <include>org.bouncycastle:bcprov-jdk15on</include>
         <include>net.java.dev.jna:jna</include>
         <include>org.slf4j:jul-to-slf4j</include>
