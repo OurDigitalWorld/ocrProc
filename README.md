@@ -48,11 +48,13 @@ A directory structure for identifying and managing OCR tasks. The directories th
 
 *   **watchDir** - used for identfying files that be processed. ocrProc will flag anything with an image extension recognized by the 
 host operating system's [JAI support](https://www.oracle.com/technetwork/java/iio-141084.html) as well as any PDF file.
-*   **procDir** - candidate files are copied to this directory before OCR/text extraction is performed;
+*   **procDir** - files are copied to this directory as OCR/text extraction is performed;
 *   **destDir** - this is the directory that receives the result of the processing. Both _procDir_ and _destDir_ retain the 
 directory structure used in the _watch_ directory, allowing nesting of sundirectories.
-*   **rejectDir** - files that cannot be processed are placed here. For example, a PDF file with password access will not be
-able to be processed automatically and will be placed here. This is the directory to use for tracking problematic files.
+*   **rejectDir** - all candidate files go through this directory, and remain 
+if for some reason they cannot be processed. For example, a PDF file requiring 
+password access will not be accessible. This is the directory to use for 
+tracking problematic files.
 
 The other options are as follows:
 
@@ -72,11 +74,25 @@ instance running at a time. In unix-like environments, the assumption is that a 
 script could be added to crontab with the following syntax:
 
 ```
+#if java is not running, clean up (may have crashed on a document)
+if ! pgrep -u user -x "java" > /dev/null
+then
+   rm /tmp/temp*.pdf
+   rm /tmp/multipage*.tif
+   rm /leglib/*.lck
+fi
+
+#only run if there are no lck files
 count=`ls -1 /leglib/*.lck 2>/dev/null | wc -l`
 if [ $count == 0 ]
 then
-   export JAVA_HOME=/usr/lib/jvm/default-java
+   rm /tmp/temp*.pdf
+   rm /tmp/multipage*.tif
+   export LC_ALL=C
+   export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
    cd /leglib && java -jar ocrProc/target/ocrProc-exe.jar
+   rm /tmp/temp*.pdf
+   rm /tmp/multipage*.tif
 fi
 ```
 
@@ -86,6 +102,13 @@ every 15 minutes:
 ```
 */15 * * * * /leglib/ocrProc.sh
 ```
+
+If, for some reason, the program crashes, the script will remove the lock
+file so that the process can start at the next file. The offending file
+should be in the _reject_ folder. This is particularly important for PDF
+files since odd objects seem more common with these. Also note the
+_LC_ALL_ option, this seems to a common gotcha on linux systems when using
+Tesseract.
 
 ocrProc uses _log4j_ logging properties, set in the 
 [resources directory](https://github.com/OurDigitalWorld/ocrProc/tree/master/src/main/resources). In this case, an _ocrProc.log_ 
@@ -107,22 +130,12 @@ The log will be more extensive if candidate files are found in the _watch_ direc
 
 ```
 03-10@21:30:01 INFO      4 file(s) identified for processing
-03-10@21:30:01 INFO      supported image formats: jpg,tiff,bmp,pcx,gif,wbmp,png,raw,jpeg,pnm,tif
+03-10@21:30:01 INFO      supported image formats: supported image formats: jpg,jpeg 2000,tiff,bmp,pcx,gif,wbmp,png,raw,jpeg,pnm,tif,jbig2,jpeg2000
 03-10@21:30:01 INFO      moved: /leglib/watch/00001.pdf to: /leglib/process/00001.pdf
 03-10@21:30:01 INFO      create ocr from sourceFile: /leglib/process/00001.pdf
-03-10@21:30:01 INFO      target file: /leglib/output/00001.pdf
-03-10@21:30:02 INFO      moved: /leglib/watch/00570.pdf to: /leglib/process/00570.pdf
-03-10@21:30:02 INFO      create ocr from sourceFile: /leglib/process/00570.pdf
-03-10@21:30:02 INFO      target file: /leglib/output/00570.pdf
-03-10@21:30:02 INFO      moved: /leglib/watch/pdf-example-fonts.pdf to: /leglib/process/pdf-example-fonts.pdf
-03-10@21:30:02 INFO      create ocr from sourceFile: /leglib/process/pdf-example-fonts.pdf
-03-10@21:30:02 INFO      target file: /leglib/output/pdf-example-fonts.pdf
-03-10@21:30:02 WARN      Using fallback font 'LiberationSans' for 'TimesNewRomanPSMT'
-03-10@21:30:02 WARN      Using fallback font LiberationSans for Arial
-03-10@21:30:02 INFO      moved: /leglib/watch/reports/water_quality1.png to: /leglib/process/reports/water_quality1.png
-03-10@21:30:02 INFO      create ocr from sourceFile: /leglib/process/reports/water_quality1.png
-03-10@21:30:02 INFO      target file: /leglib/output/leglib/process/reports/water_quality1.pdf
-03-10@21:30:48 INFO      4 processed
+03-10@21:30:01 INFO      Using fallback font 'LiberationSans' for 'Helvetica-Bold'
+03-10@21:30:01 INFO      OpenType Layout tables used in font ABCDEE+Arial-BoldMT are not implemented in PDFBox and will be ignored
+... and lots of font messages for large PDFs
 03-10@21:30:48 INFO      removing lock file: 2019-30-10_09-30-01.lck
 ```
 
@@ -137,5 +150,8 @@ if not exist *.lck (
 
 It is also possible to simply use _ocrProc_ from the command line and it is worthwhile testing it in this way to make sure it
 is producing the desired results before creating a scheduled process.
+
+ocrProc will expect [JAI](https://geoserver.geo-solutions.it/edu/en/install_run/jai_io_install.html) support in the operating 
+system in order to handle _Jpeg2000_ images (common in PDF files).
 
 art rhyno [ourdigitalworld/cdigs](https://github.com/artunit)

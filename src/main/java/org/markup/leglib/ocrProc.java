@@ -36,6 +36,8 @@ import org.apache.commons.logging.LogFactory;
 
 //ImageIO
 import javax.imageio.ImageIO;
+import javax.imageio.spi.IIORegistry;
+import javax.imageio.spi.ImageReaderSpi;
 
 //JCL
 import java.awt.image.BufferedImage;
@@ -50,6 +52,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
@@ -155,12 +158,16 @@ public class ocrProc {
     public static String listImgFormats()
     {
         String iformats = "";
+        IIORegistry registry = IIORegistry.getDefaultInstance();
+        registry.registerServiceProvider(new com.github.jaiimageio.jpeg2000.impl.J2KImageReaderSpi());
+        registry.registerServiceProvider(new org.apache.pdfbox.jbig2.JBIG2ImageReaderSpi());
+
         String[] formatNames = ImageIO.getReaderFormatNames();
         for (int f = 0; f < formatNames.length; f++) {
             String format = formatNames[f].toLowerCase() + ",";
             if (!iformats.contains(format))
                 iformats += format;
-        }//format
+        }
         if (iformats.length() > 0)
             iformats = iformats.substring(0, iformats.length() - 1);
 
@@ -240,9 +247,12 @@ public class ocrProc {
     /*
        textFromPdfInput() - loop through PDF pages and OCR any without text
     */
-    public static boolean textFromPdfInput(String sourceFile, String outFile, String ext) {
+    public static boolean textFromPdfInput(String sourceFile, String outFile, String ext) 
+    {
         File pdfFile = new File(sourceFile);
         int pgno = 0;
+        boolean ocrFlag = false;
+
         try {
             pgno = pdfU.getPdfPageCount(pdfFile);
         } catch (Exception ex) {
@@ -274,8 +284,10 @@ public class ocrProc {
                              createTempFile("tempfile", "." + PDF_EXT);
                          pdfPageOcr.deleteOnExit();
                          //swap pdf page if OCR is possible
-                         if (pdfOutFromOcr(tiffFile,changeExt(pdfPageOcr.toString(),PDF_EXT,"","")))
+                         if (pdfOutFromOcr(tiffFile,changeExt(pdfPageOcr.toString(),PDF_EXT,"",""))) {
+                             ocrFlag = true;
                              fileList[pg] = pdfPageOcr;  
+                         }//if
                      }//if 
                      if (textFlag) {
                          pdfText = textFromImgInput(tiffFile.toString());
@@ -288,14 +300,26 @@ public class ocrProc {
                 return false;
             }//try
         }//for
+        //make sure this is a viable PDF
         if (pdfFlag && fileList.length > 0) { 
-            try {
-                pdfU.mergePdf(fileList, 
-                    new File(outFile));
-            } catch (Exception ex) {
-                logger.info("pdf problem: " + ex.toString());
-                return false;
-            }//try
+            //was there any OCR? copy to output if text is already there or OCR did not produce anything
+            if (ocrFlag) {
+                try {
+                    pdfU.mergePdf(fileList, 
+                        new File(outFile));
+                } catch (Exception ex) {
+                    logger.info("pdf problem: " + ex.toString());
+                    return false;
+                }//try
+            } else {
+                logger.info("copy PDF file, no OCR needed and/or produced");
+                try {
+                    FileUtils.copyFile(pdfFile,new File(outFile));
+                } catch (Exception ex) {
+                    logger.info("copy problem: " + ex.toString());
+                    return false;
+                }//try
+            }//if
         }//if
         return true;
     }//textFromPdfInput
@@ -374,7 +398,8 @@ public class ocrProc {
         File procFile = new File(fullPath + fileName);
         File ocrFile = new File(outPath + fileName);
         File rejectsFile = new File(rejectsPath + fileName);
-        File dirFile = new File(procFile.getParent());
+        //File dirFile = new File(procFile.getParent());
+        File dirFile = new File(rejectsFile.getParent());
         File outFile = new File(ocrFile.getParent());
 
         if (!dirFile.exists()) {
@@ -387,25 +412,27 @@ public class ocrProc {
              logger.info(outFile.toString() + ": created");
         }//if
 
-        if (!procFile.exists() && file.renameTo(procFile)) {
+        //if (!procFile.exists() && file.renameTo(procFile)) {
+        if (!rejectsFile.exists() && file.renameTo(rejectsFile)) {
              if (curDir.list().length == 0 && !wDir.contains(curDir.toString())) {
                  curDir.delete();
              }//if
              logger.info("moved: " + file.toString() +
-                 " to: " + procFile.toString());
-             if (!createOcrOutput(procFile.toString(),
+                 " to: " + rejectsFile.toString());
+             if (!createOcrOutput(rejectsFile.toString(),
                  ocrFile.toString(), ext)) 
              {
                  logger.info("ocr failed for: " + 
-                     procFile.toString());
-                 File rejDir = new File(rejectsFile.getParent());
-                 if (!rejDir.exists()) {
-                     rejDir.mkdirs();
-                     logger.info(rejDir.toString() + ": created");
-                 }//if
-                 procFile.renameTo(rejectsFile);
-                 logger.info("moved: " + procFile.toString() +
-                     " to: " + rejectsFile.toString());
+                     rejectsFile.toString());
+             } else {
+                 File procDir = new File(procFile.getParent());
+                 if (!procDir.exists()) {
+                     procDir.mkdirs();
+                     logger.info(procDir.toString() + ": created");
+                 }
+                 rejectsFile.renameTo(procFile);
+                 logger.info("moved: " + rejectsFile.toString() +
+                     " to: " + procFile.toString());
              }//if
         }//if
     }//dealWithFiles
@@ -510,7 +537,6 @@ public class ocrProc {
         prop.load(input);
 
         String sWatchDir = prop.getProperty("watchDir");
-        String imgFormats = listImgFormats();
         String sProcDir = prop.getProperty("procDir");
         String sDestDir = prop.getProperty("destDir");
         String sRejectDir = prop.getProperty("rejectDir");
