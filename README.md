@@ -40,6 +40,8 @@ rejectDir=/leglib/reject
 #choice of text, pdf, or both
 formats=text,pdf
 langs=eng+fra
+#blank setting to detect gibberish
+blanks=20
 #tesseract data file location
 tessdata=/usr/share/tesseract-ocr/4.00/tessdata
 ```
@@ -61,6 +63,7 @@ The other options are as follows:
 *   **formats** - this can be set to a value of _text_ or _pdf_, as well as both, i.e., _text,pdf_. This refers to the **output** format. For example, the file _sample.pdf_ can be OCRed with the _text_ option to produce a _sample.txt_ in the destination directory. Similarly, the _pdf_ option will result in a _sample.pdf_ to be created in the destination directory, and the OCR in this case will be _embedded_ into each page of the _pdf_ file. Note that _ocrProc_ will not perform OCR on a PDF page if it already has embedded text. This could mean, for example, that one page in a 20 page PDF document has no text in the input file, but the output file has text on this page as a result of OCR processing.
 *   **langs** - this is used to specify one or more codes as used by [Tesseract](https://github.com/tesseract-ocr/). The full list of
 languages can be found in the [Tesseract wiki](https://github.com/tesseract-ocr/tesseract/wiki/Data-Files).
+*   **blanks** - threshold based on dividing text on a page by number of blanks, sometimes PDFs contain text that comes out as garbage because of mismatched encodings, etc.
 *   **tessdata** - the location of the _Tesseract_ data directory. _ocrProc_ uses [Tess4J](http://tess4j.sourceforge.net/) to provide
 access to the _Tesseract_ libraries, and this allows the appropriate directory to be explictedly set.
 

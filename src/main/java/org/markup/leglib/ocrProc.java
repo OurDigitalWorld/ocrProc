@@ -77,6 +77,9 @@ public class ocrProc {
     public static boolean pdfFlag = false;
     public static boolean textFlag = false;
 
+    //use to indicate gibberish in PDF text
+    public static int blankLimit = 25;
+
     /*
        help() - invoke apache commons CLI help facility
     */
@@ -130,6 +133,10 @@ public class ocrProc {
             PDDocument document = PDDocument.load(new File(pdfFile));
             PDFTextStripper stripper = new PDFTextStripper();
             text = stripper.getText(document);
+            int tlength = text.length();
+            int tspace = tlength - (text.replaceAll(" ", "").length());
+            if (tspace > 0 && (Math.round(tlength/tspace) > blankLimit))
+                text = "";
             document.close();
         } catch (IOException ioe) {
             logger.info(pdfFile + " fails text test: " + ioe.toString());
@@ -252,6 +259,8 @@ public class ocrProc {
         File pdfFile = new File(sourceFile);
         int pgno = 0;
         boolean ocrFlag = false;
+        boolean textStart = false;
+        String pdfText;
 
         try {
             pgno = pdfU.getPdfPageCount(pdfFile);
@@ -263,7 +272,7 @@ public class ocrProc {
             return false;
         File[] fileList = new File[pgno];
         String txtFile = changeExt(outFile, ext, TEXT_EXT,".");
-        String pdfText;
+                    
 
         for(int pg=0; pg<pgno; pg++){
             try {
@@ -273,8 +282,12 @@ public class ocrProc {
                 pdfText = getPdfTextIfAny(pdfPage.toString());
                 if (pdfFlag) fileList[pg] = pdfPage;
                 if (pdfText.trim().length() > 0) {
+                    //clear out text file in case of a reprocess
+                    if (!textStart && textFlag) FileUtils.writeStringToFile(
+                         new File(txtFile), "", TEXT_ENC, false);
                     if (textFlag) FileUtils.writeStringToFile(
-                        new File(txtFile), pdfText, TEXT_ENC, true);
+                         new File(txtFile), pdfText, TEXT_ENC, true);
+                    textStart = true;
                 } else {
                      //probably biggest bottleneck but need an image for OCR
                      logger.info("create image file for: " + pdfPage);
@@ -503,6 +516,7 @@ public class ocrProc {
     {
         options = new Options();
         options.addOption("d", "destination", true, "destination directory");
+        options.addOption("b", "blanks", true, "blank count");
         options.addOption("f", "formats", true, "formats - text, pdf");
         options.addOption("h", "help", false, "show help");
         options.addOption("l", "languages", true, "languages, e.g eng, eng+fra");  
@@ -520,7 +534,7 @@ public class ocrProc {
         }//if
 
         Date date = new Date();
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-mm-dd_hh-mm-ss");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_hh-mm-ss");
         String strLckFile = dateFormat.format(date) + ".lck";
 
         File lckFile = new File(strLckFile);
@@ -535,6 +549,13 @@ public class ocrProc {
         InputStream input = new FileInputStream(getProcPath() + 
             "/config/ocrProc.properties");
         prop.load(input);
+
+        String blanks = prop.getProperty("blanks");
+        if (cl.hasOption("b"))
+           blanks = checkOption("b",blanks);
+
+        if (isInt(blanks))
+            blankLimit = Integer.parseInt(blanks);
 
         String sWatchDir = prop.getProperty("watchDir");
         String sProcDir = prop.getProperty("procDir");
