@@ -48,6 +48,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.OutOfMemoryError;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -309,7 +310,10 @@ public class ocrProc {
                      }//if               
                 }//if
             } catch (IOException ioe) {
-                logger.info("file problem for pg: " + pg + " of " + pdfFile);
+                logger.info("file problem for pg: " + (pg + 1) + " of " + pdfFile);
+                return false;
+            } catch (OutOfMemoryError ome) {
+                logger.info("memory problem for pg: " + (pg + 1) + " of " + pdfFile);
                 return false;
             }//try
         }//for
