@@ -291,7 +291,7 @@ public class ocrProc {
                     textStart = true;
                 } else {
                      //probably biggest bottleneck but need an image for OCR
-                     logger.info("create image file for: " + pdfPage);
+                     logger.info("create image file for: " + pdfPage + " - pg. " + (pg+1));
                      File tiffFile = pdfU.convertPdf2Tiff(pdfPage);                
                      if (pdfFlag) {
                          File pdfPageOcr = File.
@@ -311,10 +311,10 @@ public class ocrProc {
                 }//if
             } catch (IOException ioe) {
                 logger.info("file problem for pg: " + (pg + 1) + " of " + pdfFile);
-                return false;
             } catch (OutOfMemoryError ome) {
                 logger.info("memory problem for pg: " + (pg + 1) + " of " + pdfFile);
-                return false;
+            } catch (Exception ex) {
+                logger.info(ex.toString() + " problem for pg: " + (pg + 1) + " of " + pdfFile);
             }//try
         }//for
         //make sure this is a viable PDF
