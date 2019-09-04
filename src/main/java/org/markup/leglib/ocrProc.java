@@ -278,7 +278,6 @@ public class ocrProc {
         for(int pg=0; pg<pgno; pg++){
             try {
                 File pdfPage = File.createTempFile("tempfile", "." + PDF_EXT);
-                pdfPage.deleteOnExit();
                 pdfU.splitPdf(pdfFile,pdfPage,pg+1,pg+1);
                 pdfText = getPdfTextIfAny(pdfPage.toString());
                 if (pdfFlag) fileList[pg] = pdfPage;
@@ -291,24 +290,27 @@ public class ocrProc {
                     textStart = true;
                 } else {
                      //probably biggest bottleneck but need an image for OCR
-                     logger.info("create image file for: " + pdfPage + " - pg. " + (pg+1));
+                     logger.info("create image file for: " + pdfPage + " - pg. "
+                         + (pg+1) + " of " + pgno);
                      File tiffFile = pdfU.convertPdf2Tiff(pdfPage);                
                      if (pdfFlag) {
                          File pdfPageOcr = File.
                              createTempFile("tempfile", "." + PDF_EXT);
-                         pdfPageOcr.deleteOnExit();
                          //swap pdf page if OCR is possible
                          if (pdfOutFromOcr(tiffFile,changeExt(pdfPageOcr.toString(),PDF_EXT,"",""))) {
                              ocrFlag = true;
                              fileList[pg] = pdfPageOcr;  
                          }//if
+                         pdfPageOcr.delete();
                      }//if 
                      if (textFlag) {
                          pdfText = textFromImgInput(tiffFile.toString());
                          if (pdfText.trim().length() > 0) FileUtils.writeStringToFile(
                             new File(txtFile), pdfText, TEXT_ENC, true);
                      }//if               
+                     tiffFile.delete();
                 }//if
+                pdfPage.delete();
             } catch (IOException ioe) {
                 logger.info("file problem for pg: " + (pg + 1) + " of " + pdfFile);
             } catch (OutOfMemoryError ome) {
