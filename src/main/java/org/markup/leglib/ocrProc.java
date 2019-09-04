@@ -300,8 +300,8 @@ public class ocrProc {
                          if (pdfOutFromOcr(tiffFile,changeExt(pdfPageOcr.toString(),PDF_EXT,"",""))) {
                              ocrFlag = true;
                              fileList[pg] = pdfPageOcr;  
+                             pdfPage.delete();
                          }//if
-                         pdfPageOcr.delete();
                      }//if 
                      if (textFlag) {
                          pdfText = textFromImgInput(tiffFile.toString());
@@ -310,7 +310,6 @@ public class ocrProc {
                      }//if               
                      tiffFile.delete();
                 }//if
-                pdfPage.delete();
             } catch (IOException ioe) {
                 logger.info("file problem for pg: " + (pg + 1) + " of " + pdfFile);
             } catch (OutOfMemoryError ome) {
@@ -330,6 +329,10 @@ public class ocrProc {
                     logger.info("pdf problem: " + ex.toString());
                     return false;
                 }//try
+                logger.info("cleaning up temp files...");
+                for (File tmpFile : fileList) {
+                    tmpFile.delete();
+                }//for
             } else {
                 logger.info("copy PDF file, no OCR needed and/or produced");
                 try {
