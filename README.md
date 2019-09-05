@@ -46,7 +46,7 @@ blanks=20
 tessdata=/usr/share/tesseract-ocr/4.00/tessdata
 ```
 
-A directory structure for identifying and managing OCR tasks. The directories that control the flow are:
+The directory structure for identifying and managing OCR tasks is given below. The directories that control the flow are:
 
 *   **watchDir** - used for identfying files that be processed. ocrProc will flag anything with an image extension recognized by the 
 host operating system's [JAI support](https://www.oracle.com/technetwork/java/iio-141084.html) as well as any PDF file.
